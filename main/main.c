@@ -19,6 +19,9 @@
 #include "driver/gpio.h"
 
 #define LED_GPIO 2
+#define SPP_UART_NUM UART_NUM_1
+#define SPP_UART_TX_PIN 23
+#define SPP_UART_RX_PIN 34
 
 static int ble_spp_server_gap_event(struct ble_gap_event *event, void *arg);
 static uint8_t own_addr_type;
@@ -370,7 +373,7 @@ void ble_server_uart_task(void *pvParameters)
                     uint8_t *ntf;
                     ntf = (uint8_t *)malloc(sizeof(uint8_t) * event.size);
                     memset(ntf, 0x00, event.size);
-                    uart_read_bytes(UART_NUM_0, ntf, event.size, portMAX_DELAY);
+                    uart_read_bytes(SPP_UART_NUM, ntf, event.size, portMAX_DELAY);
 
                     for (int i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
                         /* Check if client has subscribed to notifications */
@@ -402,17 +405,17 @@ static void ble_spp_uart_init(void)
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_RTS,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .rx_flow_ctrl_thresh = 122,
         .source_clk = UART_SCLK_DEFAULT,
     };
     //Install UART driver, and get the queue.
-    uart_driver_install(UART_NUM_0, 4096, 8192, 10, &spp_common_uart_queue, 0);
+    uart_driver_install(SPP_UART_NUM, 4096, 8192, 10, &spp_common_uart_queue, 0);
     //Set UART parameters
-    uart_param_config(UART_NUM_0, &uart_config);
+    uart_param_config(SPP_UART_NUM, &uart_config);
     //Set UART pins
-    uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    xTaskCreate(ble_server_uart_task, "uTask", 4096, (void *)UART_NUM_0, 8, NULL);
+    uart_set_pin(SPP_UART_NUM, SPP_UART_TX_PIN, SPP_UART_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    xTaskCreate(ble_server_uart_task, "uTask", 4096, (void *)SPP_UART_NUM, 8, NULL);
 }
 
 
